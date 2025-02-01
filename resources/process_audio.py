@@ -4,6 +4,8 @@ import numpy as np
 import joblib
 import os
 from moviepy import VideoFileClip
+import contextlib
+import io
 
 # Load the SVM model and scaler
 MODEL_PATH = "../resources/svm_model.pkl"
@@ -43,17 +45,25 @@ def extract_features(file_path):
 
 # Function to extract audio from MP4 and save as WAV
 def extract_audio_from_mp4(mp4_path, wav_path):
-    # Load the video file
-    video = VideoFileClip(mp4_path)
+    try:
+        # Suppress moviepy output
+        with contextlib.redirect_stdout(io.StringIO()):
+            # Load the video file
+            video = VideoFileClip(mp4_path)
 
-    # Extract audio
-    audio = video.audio
+            # Extract audio
+            audio = video.audio
 
-    # Save audio as WAV
-    audio.write_audiofile(wav_path)
+            # Save audio as WAV
+            audio.write_audiofile(wav_path, codec='pcm_s16le')
 
-    # Close the video file
-    video.close()
+            # Close the video and audio files
+            audio.close()
+            video.close()
+
+    except Exception as e:
+        print(f"Error extracting audio from MP4: {e}")
+        sys.exit(1)
 
 def main():
     if len(sys.argv) < 2:
