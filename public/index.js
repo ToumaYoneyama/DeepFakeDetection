@@ -6,11 +6,13 @@ const { exec } = require('child_process');
 const app = express();
 
 // Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname)));
 
 // Configure multer to use disk storage
 const storage = multer.diskStorage({
-    destination: 'uploads/',
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, 'uploads')); // Save files in the "uploads" folder under "public"
+    },
     filename: (req, file, cb) => {
         cb(null, file.originalname); // Keep the original filename
     }
@@ -49,11 +51,11 @@ app.post('/upload', upload.single('file'), (req, res) => {
         if (error) {
             console.error(`Error executing Python script: ${error}`);
             console.error(`stderr: ${stderr}`);
-            return res.status(500).send('Error processing the file.');
+            return res.status(500).json({ error: 'Error processing the file.' });
         }
 
         const result = stdout.trim();
-        res.send(`File uploaded and processed successfully. Result: ${result}`);
+        res.json({ result: result }); // Send the result as JSON
     });
 });
 
